@@ -2,15 +2,19 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
-#define ROWS 20
-#define COLUMNS 20
+#define ROWS 3
+#define COLUMNS 3
 
 int matA[COLUMNS][ROWS], matB[COLUMNS][ROWS], matC[COLUMNS][ROWS] = {};
 
 void *multiply(void *param)
 {
-    int* humor = (int*)param;
-    printf("%d %d\n",humor[0], humor[1]);
+    int *parametros = (int *)param;
+    printf("%d %d\n", parametros[0], parametros[1]);
+    for (int i = 0; i < ROWS; i++ ){
+        matC[parametros[0]][parametros[1]] += matA[parametros[0]][i] * matB[i][parametros[1]]; 
+    }
+    
 }
 
 void single_threaded_multiplication()
@@ -20,7 +24,9 @@ void single_threaded_multiplication()
     {
         for (int j = 0; j < COLUMNS; j++)
         {
-            
+            matC[i][j] = 0;
+            for (int k = 0; k < ROWS; k++)
+                matC[i][j] += matA[i][k] * matB[k][j];
         }
     }
 }
@@ -55,7 +61,7 @@ int main()
             p = malloc(sizeof(int) * 2);
             p[0] = i;
             p[1] = j;
-            pthread_create(&threads[i*COLUMNS + j], NULL, multiply, (void *)(p));
+            pthread_create(&threads[i * COLUMNS + j], NULL, multiply, (void *)(p));
         }
     }
     end = clock();
