@@ -2,31 +2,29 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
-#define ROWS 3
-#define COLUMNS 3
+#define ROWS 100
+#define COLUMNS 100
 
-int matA[COLUMNS][ROWS], matB[COLUMNS][ROWS], matC[COLUMNS][ROWS] = {};
+int matA[COLUMNS][ROWS], matB[COLUMNS][ROWS], matC[COLUMNS][ROWS] = {}, matD[COLUMNS][ROWS] = {};
 
 void *multiply(void *param)
 {
     int *parametros = (int *)param;
-    printf("%d %d\n", parametros[0], parametros[1]);
-    for (int i = 0; i < ROWS; i++ ){
-        matC[parametros[0]][parametros[1]] += matA[parametros[0]][i] * matB[i][parametros[1]]; 
+    for (int i = 0; i < ROWS; i++)
+    {
+        matC[parametros[0]][parametros[1]] += matA[parametros[0]][i] * matB[i][parametros[1]];
     }
-    
 }
 
 void single_threaded_multiplication()
 {
-    printf("multiply of the matrix=\n");
     for (int i = 0; i < ROWS; i++)
     {
         for (int j = 0; j < COLUMNS; j++)
         {
-            matC[i][j] = 0;
+
             for (int k = 0; k < ROWS; k++)
-                matC[i][j] += matA[i][k] * matB[k][j];
+                matD[i][j] += matA[i][k] * matB[k][j];
         }
     }
 }
@@ -44,8 +42,43 @@ int main()
         {
             matA[i][j] = rand() % 10;
             matB[i][j] = rand() % 10;
+            matC[i][j] = 0;
+            matD[i][j] = 0;
         }
     }
+    // printf("matriz A:\n");
+    // for (int i = 0; i < ROWS; i++)
+    // {
+    //     for (int j = 0; j < COLUMNS; j++)
+    //     {
+    //         printf("%d ", matA[i][j]);
+    //     }
+    //     printf("\n");
+    // }
+
+    // printf("matriz B:\n");
+    // for (int i = 0; i < ROWS; i++)
+    // {
+    //     for (int j = 0; j < COLUMNS; j++)
+    //     {
+    //         printf("%d ", matB[i][j]);
+    //     }
+    //     printf("\n");
+    // }
+
+    start = clock();
+    single_threaded_multiplication();
+    end = clock();
+    printf("Resulting matrix from the single threaded function: \n");
+    // for (int i = 0; i < ROWS; i++)
+    // {
+    //     for (int j = 0; j < COLUMNS; j++)
+    //     {
+    //         printf("%d ", matD[i][j]);
+    //     }
+    //     printf("\n");
+    // }
+    printf("Time spent to multiplicate two matrices using single thread function %.2f\n", (double)(-start + end));
 
     int MAX_THREAD = ROWS * COLUMNS;
 
@@ -74,9 +107,9 @@ int main()
         pthread_join(threads[i], NULL);
     end = clock();
 
-    printf("Time spent to multiplicate matrixes with %d rows and %d columns using %d threads: %.2f\n", ROWS, COLUMNS, MAX_THREAD, (double)(-start + end));
+    printf("Time spent to multiplicate matrices with %d rows and %d columns using %d threads: %.2f\n", ROWS, COLUMNS, MAX_THREAD, (double)(-start + end));
 
-    // // Displaying the result matrix
+    // Displaying the result matrix
     // for (int i = 0; i < ROWS; i++)
     // {
     //     for (int j = 0; j < COLUMNS; j++)
