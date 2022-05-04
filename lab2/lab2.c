@@ -16,11 +16,12 @@ int maxServings = 0;
 // Apenas para impressão na tela
 
 const char **savagesStatus;
+const char *cookStatus = "...";
 
 //
 
 int numServingsRemaining = 0;
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+sem_t mutex;
 sem_t semEmptyPot;
 sem_t semFullPot;
 
@@ -29,12 +30,54 @@ void *savageMain(void *parameter)
     size_t i = (size_t)parameter;
 
     while (1) {
+        int servingsRemaining;
+
+        savagesStatus[i] = "checking pot";
+        sleep(1);
+
+        sem_wait(&mutex);
+        servingsRemaining = numServingsRemaining;
+        while (servingsRemaining == 0) {
+            savagesStatus[i] = "waking cook";
+            sleep(1);
+            sem_post(&semEmptyPot);
+            sem_post(&mutex);
+
+            savagesStatus[i] = "waiting";
+            sem_wait(&semFullPot);
+    
+            savagesStatus[i] = "checking pot";
+            sleep(1);
+
+            sem_wait(&mutex);
+            servingsRemaining = numServingsRemaining;
+        }
+
+        servingsRemaining -= 1;
+        numServingsRemaining = servingsRemaining;
+        sem_post(&mutex);
+
+        savagesStatus[i] = "eating";
+
+        sleep(rand() % 7 + 1);
     }
 }
 
 void *cookMain(void *parameter)
 {
     while (1) {
+        cookStatus = "waiting";
+        sem_wait(&semEmptyPot);
+
+        cookStatus = "filling pot";
+        sleep(5);
+        sem_wait(&mutex);
+        numServingsRemaining = maxServings;
+        sem_post(&mutex);
+
+        for (int i = 0; i < numSavages; i++) {
+            sem_post(&semFullPot);
+        }
     }
 }
 
@@ -61,6 +104,9 @@ int main(int argc, char **argv)
     // Inicialização
 
     numServingsRemaining = maxServings;
+    if (sem_init(&mutex, 0, 1)) {
+        return 1;
+    }
     if (sem_init(&semEmptyPot, 0, 0)) {
         return 1;
     }
@@ -102,18 +148,20 @@ int main(int argc, char **argv)
         printf("\033[0;0f"); // Move o cursor para linha 0 coluna 0
         printf("\33[2K");    // Limpa a linha
         printf("Servings: %02d / %02d\n", numServingsRemaining, maxServings);
+        printf("\33[2K");    // Limpa a linha
+        printf("Cook:     %s", cookStatus);
 
         for (int i = 0; i < numSavages; i++) {
             if (savagesStatus[i] != loadedStatus[i]) {
                 loadedStatus[i] = savagesStatus[i];
                 printf("\033[%d;0f",
-                       i + 3);    // Move o cursor para linha i + 3 coluna 0
+                       i + 5);    // Move o cursor para linha i + 5 coluna 0
                 printf("\33[2K"); // Limpa a linha
-                printf("Savage %02d: %s\n", i, loadedStatus[i]);
+                printf("Savage %02d: %s", i, loadedStatus[i]);
             }
         }
 
-        sleep(1);
+        usleep(100);
     }
     printf("\e[1;1H\e[2J"); // Limpa o console
     printf("\e[?25h"); // Mostra o cursor
