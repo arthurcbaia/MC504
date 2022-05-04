@@ -30,31 +30,22 @@ void *savageMain(void *parameter)
     size_t i = (size_t)parameter;
 
     while (1) {
-        int servingsRemaining;
-
-        savagesStatus[i] = "checking pot";
-        sleep(1);
-
+        savagesStatus[i] = "queued to get serving";
         sem_wait(&mutex);
-        servingsRemaining = numServingsRemaining;
-        while (servingsRemaining == 0) {
+
+        if (numServingsRemaining == 0) {
             savagesStatus[i] = "waking cook";
             sleep(1);
             sem_post(&semEmptyPot);
-            sem_post(&mutex);
 
             savagesStatus[i] = "waiting";
             sem_wait(&semFullPot);
-    
-            savagesStatus[i] = "checking pot";
-            sleep(1);
-
-            sem_wait(&mutex);
-            servingsRemaining = numServingsRemaining;
         }
 
-        servingsRemaining -= 1;
-        numServingsRemaining = servingsRemaining;
+        savagesStatus[i] = "get serving";
+        sleep(1);
+
+        numServingsRemaining -= 1;
         sem_post(&mutex);
 
         savagesStatus[i] = "eating";
@@ -71,13 +62,9 @@ void *cookMain(void *parameter)
 
         cookStatus = "filling pot";
         sleep(5);
-        sem_wait(&mutex);
         numServingsRemaining = maxServings;
-        sem_post(&mutex);
 
-        for (int i = 0; i < numSavages; i++) {
-            sem_post(&semFullPot);
-        }
+        sem_post(&semFullPot);
     }
 }
 
@@ -148,7 +135,7 @@ int main(int argc, char **argv)
         printf("\033[0;0f"); // Move o cursor para linha 0 coluna 0
         printf("\33[2K");    // Limpa a linha
         printf("Servings: %02d / %02d\n", numServingsRemaining, maxServings);
-        printf("\33[2K");    // Limpa a linha
+        printf("\33[2K"); // Limpa a linha
         printf("Cook:     %s", cookStatus);
 
         for (int i = 0; i < numSavages; i++) {
@@ -164,7 +151,7 @@ int main(int argc, char **argv)
         usleep(100);
     }
     printf("\e[1;1H\e[2J"); // Limpa o console
-    printf("\e[?25h"); // Mostra o cursor
+    printf("\e[?25h");      // Mostra o cursor
 
     return 0;
 }
