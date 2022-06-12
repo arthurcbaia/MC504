@@ -1,0 +1,32 @@
+From d58e3aab84a7b9baf164cef31261aa787f68b428 Mon Sep 17 00:00:00 2001
+From: Nicolas Nattis <contact@nicbn.com>
+Date: Sun, 12 Jun 2022 20:10:50 -0300
+Subject: [PATCH] Cleanup rtl8712/osdep_intf.h
+
+Fixes style warnings of the RND4 macro
+
+Signed-off-by: Nicolas Nattis <contact@nicbn.com>
+---
+ drivers/staging/rtl8712/osdep_intf.h | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/staging/rtl8712/osdep_intf.h b/drivers/staging/rtl8712/osdep_intf.h
+index 9e75116c9..6b607653b 100644
+--- a/drivers/staging/rtl8712/osdep_intf.h
++++ b/drivers/staging/rtl8712/osdep_intf.h
+@@ -17,7 +17,11 @@
+ #include "osdep_service.h"
+ #include "drv_types.h"
+ 
+-#define RND4(x)	(((x >> 2) + ((x & 3) != 0)) << 2)
++#define RND4(x)					\
++({						\
++	const typeof(x) __x = (x);		\
++	((__x >> 2) + ((__x & 3) != 0)) << 2;	\
++})
+ 
+ struct intf_priv {
+ 	u8 *intf_dev;
+-- 
+2.36.1
+
